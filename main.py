@@ -12,7 +12,7 @@ from google import genai
 #os.environ["https_proxy"] = "http://127.0.0.1:7897"
 
 # 引擎鉴权与实例化 (新版逻辑)
-#API_KEY = "AIzaSyAmRLoaqGLVxZINfOVeNdrT9iO08MX07Yk"
+#API_KEY = 
 
 # 实例化新版 Client 对象
 #client = genai.Client(api_key=API_KEY)
