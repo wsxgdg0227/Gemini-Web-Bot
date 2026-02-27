@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini 本地镜像</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col justify-center items-center">
+    
+    <div class="w-full max-w-2xl bg-white h-[80vh] rounded-lg shadow-xl flex flex-col">
+        <div id="chat-box" class="flex-1 p-4 overflow-y-auto">
+            <div class="mb-4 text-left">
+                <span class="inline-block bg-gray-200 text-gray-800 p-3 rounded-lg max-w-[80%]">
+                    系统就绪。等待输入。
+                </span>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-gray-200 flex gap-2">
+            <input type="text" id="user-input" 
+                   class="flex-1 border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-blue-500" 
+                   placeholder="输入 Prompt...">
+            <button id="send-btn" 
+                    class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                发送
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const chatBoxEl = document.getElementById('chat-box');
+        const inputEl = document.getElementById('user-input');
+        const sendBtnEl = document.getElementById('send-btn');
+
+        // async: 声明这是一个异步函数，允许内部使用 await 暂停执行等待网络响应
+        sendBtnEl.addEventListener('click', async function() {
+            const text = inputEl.value;
+            if (text.trim() === "") return; 
+
+            // 1. 渲染用户发送的蓝色气泡
+            const messageRow = document.createElement('div');
+            messageRow.className = "mb-4 text-right"; 
+            const bubble = document.createElement('span');
+            bubble.className = "inline-block bg-blue-500 text-white p-3 rounded-lg max-w-[80%]";
+            bubble.textContent = text; 
+            
+            messageRow.appendChild(bubble);       
+            chatBoxEl.appendChild(messageRow);    
+            
+            inputEl.value = ""; 
+            chatBoxEl.scrollTop = chatBoxEl.scrollHeight; 
+
+            // 2. 发起网络请求与后端通信
+            try {
+                // fetch 向 Python 后端发送 POST 请求
+                //const response = await fetch('http://127.0.0.1:8000/chat', {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text }) 
+                });
+
+                // 解析 Python 后端返回的 JSON 数据
+                const responseData = await response.json(); //await机制：等待相应完成再执行下一步
+
+                // 3. 渲染 Python 后端回复的灰色气泡
+                const replyRow = document.createElement('div');
+                replyRow.className = "mb-4 text-left"; 
+                const replyBubble = document.createElement('span');
+                replyBubble.className = "inline-block bg-gray-200 text-gray-800 p-3 rounded-lg max-w-[80%]";
+                
+                // responseData.reply 对应 Python 中 return {"reply": ...} 的值
+                replyBubble.textContent = responseData.reply; 
+
+                replyRow.appendChild(replyBubble);
+                chatBoxEl.appendChild(replyRow);
+                chatBoxEl.scrollTop = chatBoxEl.scrollHeight; //滚动条的位置等于总高度
+
+            } catch (error) {
+                console.error("通信失败:", error);
+                alert("无法连接到本地服务器，请检查 FastAPI 是否运行在 8000 端口。");
+            }
+        });
+    </script>
+</body>
+</html>
